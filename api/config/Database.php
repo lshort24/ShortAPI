@@ -5,7 +5,7 @@ class Database {
     private $host = "localhost";
     private $db_name = "timeline";
     private $username = "webuser";
-    private $password = "ZPy2CfEySw7bUrDA";
+    private $password = "";
     public $conn;
 
     /**
