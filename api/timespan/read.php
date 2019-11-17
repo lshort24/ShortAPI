@@ -19,4 +19,4 @@ list($query, $params) = $handler->get_read_query($id);
 $results = $handler->handle_request($query, $params);
 
 http_response_code($results["status"]);
-echo json_encode($results);
+echo json_encode($results["data"]);

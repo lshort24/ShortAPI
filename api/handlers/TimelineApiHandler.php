@@ -25,6 +25,7 @@ class TimelineApiHandler extends ApiHandler {
 
         $query = <<< MySQL
             SELECT
+                t.id,
                 t.name
             FROM
                 {$this->table_name} t
@@ -36,6 +37,7 @@ MySQL;
     }
 
     public function process_row($row) {
+        $id = null;
         $name = null;
 
         // extract row
@@ -44,6 +46,7 @@ MySQL;
         extract($row);
 
         $record = [
+            "id" => $id,
             "name" => $name
         ];
 

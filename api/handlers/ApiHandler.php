@@ -28,24 +28,18 @@ abstract class ApiHandler {
 
         $stmt->execute();
         $num = $stmt->rowCount();
+        $results = [
+            "status" => 200,
+            "data" => []
+        ];
 
         if ($num > 0) {
-            // timelines array
-            $results = [
-                "status" => 200,
-                "records" => []
-            ];
-
             // retrieve our table contents
             // fetch() is faster than fetchAll()
             // http://stackoverflow.com/questions/2770630/pdofetchall-vs-pdofetch-in-a-loop
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                array_push($results["records"], $this->process_row($row));
+                array_push($results["data"], $this->process_row($row));
             }
-        }
-        else {
-            $results["status"] = 404;
-            $results["message"] = "No records found.";
         }
 
         return $results;
