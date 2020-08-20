@@ -1,11 +1,11 @@
 <?php
+require_once 'secrets.php';
 
 class Database {
     // specify your own database credentials
     private $host = "localhost";
     private $db_name = "timeline";
     private $username = "webuser";
-    private $password = "";
     public $conn;
 
     /**
@@ -15,9 +15,10 @@ class Database {
      */
     public function getConnection(){
         $this->conn = null;
+        $secrets = getSecrets();
 
         try {
-            $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->db_name, $this->username, $this->password);
+            $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->db_name, $this->username, $secrets['db_password']);
             $this->conn->exec("set names utf8");
         }
         catch(Exception $exception){

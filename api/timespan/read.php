@@ -5,9 +5,12 @@ error_reporting(E_ALL);
 
 require_once '../config/Database.php';
 require_once '../handlers/TimeSpanApiHandler.php';
+require_once '../../api/config/secrets.php';
 
 // required headers
-header("Access-Control-Allow-Origin: *");
+$secrets = getSecrets();
+$origin = ($_SERVER['REMOTE_ADDR'] === $secrets['my_ip']) ? "http://localhost:3000" : 'https://shortsrecipes.com';
+header("Access-Control-Allow-Origin: {$origin}");
 header("Content-Type: application/json; charset=UTF-8");
 
 // initialize our handler
