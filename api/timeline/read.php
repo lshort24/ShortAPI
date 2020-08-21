@@ -11,7 +11,12 @@ require_once '../../api/config/secrets.php';
 $secrets = getSecrets();
 $origin = ($_SERVER['REMOTE_ADDR'] === $secrets['my_ip']) ? "http://localhost:3000" : 'https://shortsrecipes.com';
 header("Access-Control-Allow-Origin: {$origin}");
+header("Access-Control-Allow-Headers: Authorization");
 header("Content-Type: application/json; charset=UTF-8");
+
+if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+    $authorization = $_SERVER['HTTP_AUTHORIZATION'];
+}
 
 // initialize our handler
 $handler = new TimelineApiHandler();
