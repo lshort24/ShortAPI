@@ -2,6 +2,7 @@
   "require": {
     "ext-json": "*",
     "monolog/monolog": "^2.1",
-    "google/apiclient": "^2.7"
+    "google/apiclient": "^2.7",
+    "ext-pdo": "*"
   }
 }
