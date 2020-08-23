@@ -22,7 +22,7 @@ if (!empty($data->idToken)) {
     $client = new Google_Client(['client_id' => $secrets['googleClientId']]);
     $payload = $client->verifyIdToken($data->idToken);
     if ($payload) {
-        $userId = $payload['sub'];;
+        $userId = $payload['sub'];
     }
     else {
         $failReason = "Invalid ID Token";

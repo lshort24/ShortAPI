@@ -1,8 +1,17 @@
 {
   "require": {
     "ext-json": "*",
+    "ext-pdo": "*",
     "monolog/monolog": "^2.1",
-    "google/apiclient": "^2.7",
-    "ext-pdo": "*"
+    "google/apiclient": "^2.7"
+  },
+  "scripts": {
+    "post-update-cmd": "Google_Task_Composer::cleanup"
+  },
+  "extra": {
+    "google/apiclient-services": [
+      "Drive",
+      "YouTube"
+    ]
   }
 }
