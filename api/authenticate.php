@@ -2,6 +2,7 @@
 require __DIR__ . '/../vendor/autoload.php';
 require_once './config/Database.php';
 require_once './config/secrets.php';
+session_start();
 
 $log = new Monolog\Logger('api');
 $log->pushHandler(new Monolog\Handler\StreamHandler(__DIR__ . '/../app.log', Monolog\Logger::DEBUG));
@@ -10,6 +11,7 @@ $log->pushHandler(new Monolog\Handler\StreamHandler(__DIR__ . '/../app.log', Mon
 $secrets = getSecrets();
 $origin = ($_SERVER['REMOTE_ADDR'] === $secrets['my_ip']) ? "http://localhost:3000" : 'https://shortsrecipes.com';
 header("Access-Control-Allow-Origin: {$origin}");
+header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json; charset=UTF-8");
@@ -71,6 +73,8 @@ MySQL;
         $log->debug($ex->getMessage());
     }
 }
+
+$_SESSION['idToken'] = $authenticated ? $data->idToken : '';
 
 http_response_code(200);
 echo json_encode([
