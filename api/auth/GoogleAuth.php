@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../config/secrets.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/../MyLogger.php';
 
 class GoogleAuth
 {
@@ -25,6 +26,7 @@ class GoogleAuth
         }
 
         $userId = $payload['sub'];
+        MyLogger::debug("Looking for user {$payload['name']} ({$userId}).");
 
         // Look the user up in our database
         $query = "
