@@ -1,0 +1,8 @@
+Login to AWS: aws-new - if it hangs check AWS security group for inbound SSH that your IP is listed
+
+Maintenance:
+sudo yum update -y
+sudo systemctl restart httpd
+sudo systemctl restart mariadb
+sudo systemctl restart vsftpd
+Verify remote website is working
