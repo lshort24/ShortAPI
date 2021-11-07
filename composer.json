@@ -1,12 +1,17 @@
 {
+  "name": "lisa_short/lshortapi",
+  "description": "Dependencies for the Short API",
+  "type": "project",
+  "authors": [
+    {
+      "name": "Lisa Short",
+      "email": "lshort24@gmail.com"
+    }
+  ],
   "require": {
-    "ext-json": "*",
-    "ext-pdo": "*",
-    "monolog/monolog": "^2.1",
-    "google/apiclient": "^2.7"
-  },
-  "scripts": {
-    "post-update-cmd": "Google_Task_Composer::cleanup"
+    "webonyx/graphql-php": "^14.11",
+    "google/apiclient": "^2.11",
+    "monolog/monolog": "^2.3"
   },
   "extra": {
     "google/apiclient-services": [

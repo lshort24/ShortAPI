@@ -45,7 +45,7 @@ class GoogleAuth
         ];
 
         $database = new Database();
-        $conn = $database->getConnection();
+        $conn = $database->getConnection('timeline');
         $stmt = $conn->prepare($query);
         foreach ($params as $name => $param) {
             $stmt->bindParam($name, $param["value"], $param["type"]);
