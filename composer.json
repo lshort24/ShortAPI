@@ -9,6 +9,8 @@
     }
   ],
   "require": {
+    "ext-json": "*",
+    "ext-pdo": "*",
     "webonyx/graphql-php": "^14.11",
     "google/apiclient": "^2.11",
     "monolog/monolog": "^2.3"
