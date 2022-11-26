@@ -2,9 +2,10 @@
 session_start();
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use ShortAPI\config\Database;
 
 require __DIR__ . '/../vendor/autoload.php';
-require_once './config/Database.php';
+//require_once './config/Database.php';
 require_once './config/secrets.php';
 
 //date_default_timezone_set('America/Boise');
@@ -53,7 +54,7 @@ function authenticate(string $googleClientId) : array {
     ];
 
     $database = new Database();
-    $conn = $database->getConnection();
+    $conn = $database->getConnection('timeline');
     $stmt = $conn->prepare($query);
 
     foreach ($params as $name => $param) {

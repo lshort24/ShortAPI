@@ -20,5 +20,10 @@
       "Drive",
       "YouTube"
     ]
+  },
+  "autoload": {
+    "psr-4": {
+      "ShortAPI\\": "api/"
+    }
   }
 }

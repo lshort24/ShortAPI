@@ -1,14 +1,30 @@
 <?php
-//ini_set('display_errors', 1);
-//ini_set('display_startup_errors', 1);
-//error_reporting(E_ALL);
-require_once 'vendor/autoload.php';
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 use GraphQL\GraphQL;
 use GraphQL\Type\Schema;
-use GraphQL\Type\Definition\ObjectType;
-use GraphQL\Type\Definition\Type;
 
+use ShortAPI\GraphQL\Type\QueryType;
+
+
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../api/config/secrets.php';
+
+$log = new Logger('graphql');
+$log->pushHandler(new StreamHandler(__DIR__ . '/../graphql.log', Logger::DEBUG));
+
+// required headers
+$secrets = getSecrets();
+$origin = ($_SERVER['REMOTE_ADDR'] === $secrets['my_ip']) ? "http://localhost:3000" : 'https://shortsrecipes.com';
+header("Access-Control-Allow-Origin: $origin");
+header("Access-Control-Allow-Headers: Accept, Origin, Content-Type");
+header('Content-Type: application/json');
+
+/*
 $queryType = new ObjectType([
     'name' => 'Query',
     'fields' => [
@@ -23,7 +39,9 @@ $queryType = new ObjectType([
         ],
     ],
 ]);
+*/
 
+$queryType = new QueryType();
 $schema = new Schema([
     'query' => $queryType
 ]);
@@ -34,9 +52,10 @@ $query = $input['query'];
 $variableValues = $input['variables'] ?? null;
 
 try {
-    $rootValue = ['prefix' => 'You said: '];
+    $rootValue = [];
     $output = GraphQL::executeQuery($schema, $query, $rootValue, null, $variableValues);
-} catch (Exception $e) {
+} catch (Throwable $e) {
+    $log->error('There was an error with the query', ['error' => $e->getMessage()]);
     $output = [
         'errors' => [
             [
@@ -45,5 +64,5 @@ try {
         ]
     ];
 }
-header('Content-Type: application/json');
+
 echo json_encode($output);

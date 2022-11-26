@@ -1,9 +1,13 @@
 <?php
+
+use ShortAPI\config\Database;
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-require_once __DIR__ . '/../../config/Database.php';
+require __DIR__ . '/../../../vendor/autoload.php';
+//require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../config/secrets.php';
 
 $secrets = getSecrets();
@@ -14,6 +18,7 @@ header("Access-Control-Allow-Headers: Authorization, Content-Type");
 header("Content-Type: application/json; charset=UTF-8");
 
 $database = new Database();
+/** @var PDO $pdo */
 $pdo = $database->getConnection('goodfood');
 $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
 

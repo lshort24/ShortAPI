@@ -1,4 +1,9 @@
 <?php
+namespace ShortAPI\config;
+
+use Exception;
+use PDO;
+
 require_once 'secrets.php';
 
 class Database {
