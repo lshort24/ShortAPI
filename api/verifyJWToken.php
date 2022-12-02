@@ -3,8 +3,7 @@ use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use ShortAPI\config\Database;
 
-require __DIR__ . '/../vendor/autoload.php';
-//require_once __DIR__ . '/config/Database.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/config/secrets.php';
 
 $log = new Logger('api');
@@ -32,6 +31,7 @@ $client = new Google_Client(['client_id' => $clientId]);
 $payload = $client->verifyIdToken($data->credential);
 if (isset($payload['sub'])) {
     $userId = $payload['sub'];
+    $profileName = $payload['name'];
 } else {
     $log->error("Could not verify the JWT.");
     http_response_code(200);
@@ -79,9 +79,60 @@ if ($stmt->rowCount() === 0) {
     exit;
 }
 
+// Create a new session
+session_unset();
+session_destroy();
+session_start();
+
+// Generate an access token
+$header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);
+$payload = json_encode(['user_id' => $userId]);
+$base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
+$base64UrlPayload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payload));
+$signature = hash_hmac('sha256', $base64UrlHeader . "." . $base64UrlPayload, $secrets['authorizationSecret'], true);
+$base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+$accessToken = $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
+
+$expiresTimestamp = time() + 15 * 60; // 15 minutes
+$expiresAt = new DateTime();
+$expiresAt->setTimestamp($expiresTimestamp);
+$expiresAtString = $expiresAt->format('Y-m-d H:i:s');
+
+try {
+    $success = setcookie(
+        'accessToken',
+        $accessToken,
+        time() + 15 * 60,
+        '/',
+        'shortsrecipes.com'
+    );
+}
+catch (Throwable $e) {
+    $log->debug('Exception', ['ex' => $e->getMessage()]);
+    http_response_code(200);
+    echo json_encode([
+        'authenticated' => false,
+        'profileName' => '',
+        'failReason' => 'Server error'
+    ]);
+    exit;
+}
+
+if (!$success) {
+    $reason = 'Could create cookie for access token.';
+    $log->debug($reason);
+    http_response_code(200);
+    echo json_encode([
+        'authenticated' => false,
+        'profileName' => '',
+        'failReason' => $reason
+    ]);
+    exit;
+}
+
 http_response_code(200);
 echo json_encode([
     'authenticated' => true,
-    'profileName' => $payload['given_name'],
+    'profileName' => $profileName,
     'failReason' => ''
 ]);
