@@ -27,7 +27,7 @@ class RecipeEntity
         $this->pdo = $this->database->getConnection('goodfood');
         $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
-        $this->log = new Logger('graphql');
+        $this->log = new Logger('api');
         $this->log->pushHandler(new StreamHandler(__DIR__ . '/../../app.log', Logger::DEBUG));
     }
 
@@ -42,7 +42,7 @@ class RecipeEntity
             throw new Exception("Id is required.");
         }
 
-        $fields = 'title';
+        $fields = 'recipe_id as id, title';
         $params = [
             'recipe_id' => $id
         ];

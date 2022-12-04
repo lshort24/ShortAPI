@@ -15,26 +15,21 @@ class QueryType extends ObjectType {
     private Logger $log;
 
     public function __construct() {
-        $this->log = new Logger('graphql');
+        $this->log = new Logger('api');
         $this->log->pushHandler(new StreamHandler(__DIR__ . '/../../../app.log', Logger::DEBUG));
-
-        $recipeType = new RecipeType();
 
         $config = [
             'name' => 'Query',
-            'fields' => function () use (
-                $recipeType
-            ){
-                return [
-                    'recipe' => [
-                        'type' => $recipeType,
-                        'description' => 'A Recipe',
-                        'args' => [
-                            'id' => Type::nonNull(Type::id()),
-                        ]
+            'description' => 'Queries for the Good Food app',
+            'fields' => [
+                'recipe' => [
+                    'type' => RecipeType::instance(),
+                    'description' => 'Recipe for the given id',
+                    'args' => [
+                        'id' => Type::nonNull(Type::id()),
                     ]
-                ];
-            },
+                ]
+            ],
             'resolveField' => function ($rootValue, array $args, $context, ResolveInfo $info) {
                 $resolver = 'resolve' . ucfirst($info->fieldName);
                 return $this->{$resolver}($rootValue, $args, $context, $info);
@@ -53,6 +48,6 @@ class QueryType extends ObjectType {
      */
     function resolveRecipe($rootValue, array $args) : ?Recipe {
         $record = RecipeEntity::instance()->getRecipeById($args['id']);
-        return new Recipe($record);
+        return new Recipe($record['id'], $record['title']);
     }
 }

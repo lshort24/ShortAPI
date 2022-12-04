@@ -15,7 +15,7 @@ use ShortAPI\JWT;
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../api/config/secrets.php';
 
-$log = new Logger('graphql');
+$log = new Logger('api');
 $log->pushHandler(new StreamHandler(__DIR__ . '/../app.log', Logger::DEBUG));
 
 // required headers
@@ -53,10 +53,25 @@ if (empty($token)) {
 
 $queryType = new QueryType();
 $mutationType = new MutationType();
-$schema = new Schema([
-    'query' => $queryType,
-    'mutation' => $mutationType,
-]);
+try {
+    $schema = new Schema([
+        'query' => $queryType,
+        'mutation' => $mutationType,
+    ]);
+}
+catch (Throwable $ex) {
+    $log->debug('Schema error', ['ex' => $ex]);
+    $output = [
+        'errors' => [
+            [
+                'message' => $ex->getMessage()
+            ]
+        ]
+    ];
+    echo json_encode($output);
+    exit;
+}
+
 
 $rawInput = file_get_contents('php://input');
 $input = json_decode($rawInput, true);

@@ -2,9 +2,11 @@
 namespace ShortAPI\GraphQL\Data;
 
 class Recipe {
-    public $title;
+    public int $id;
+    public ?string $title;
 
-    public function __construct(array $data) {
-        $this->title = $data['title'];
+    public function __construct(int $id, ?string $title) {
+        $this->id = $id;
+        $this->title = $title;
     }
 }
