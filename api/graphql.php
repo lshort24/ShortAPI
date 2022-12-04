@@ -8,42 +8,54 @@ use Monolog\Logger;
 use GraphQL\GraphQL;
 use GraphQL\Type\Schema;
 
+use ShortAPI\GraphQL\Type\MutationType;
 use ShortAPI\GraphQL\Type\QueryType;
-
+use ShortAPI\JWT;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../api/config/secrets.php';
 
 $log = new Logger('graphql');
-$log->pushHandler(new StreamHandler(__DIR__ . '/../graphql.log', Logger::DEBUG));
+$log->pushHandler(new StreamHandler(__DIR__ . '/../app.log', Logger::DEBUG));
 
 // required headers
 $secrets = getSecrets();
 $origin = ($_SERVER['REMOTE_ADDR'] === $secrets['my_ip']) ? "http://localhost:3000" : 'https://shortsrecipes.com';
 header("Access-Control-Allow-Origin: $origin");
-header("Access-Control-Allow-Headers: Accept, Origin, Content-Type");
+header("Access-Control-Allow-Headers: Accept, Origin, Content-Type, Authorization");
 header('Content-Type: application/json');
 
-/*
-$queryType = new ObjectType([
-    'name' => 'Query',
-    'fields' => [
-        'echo' => [
-            'type' => Type::string(),
-            'args' => [
-                'message' => Type::nonNull(Type::string()),
-            ],
-            'resolve' => function ($rootValue, $args) {
-                return $rootValue['prefix'] . $args['message'];
-            }
-        ],
-    ],
-]);
-*/
+$token = '';
+if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
+    if (preg_match('/^Bearer (.*)$/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
+        $token = $matches[1];
+
+        $payload = JWT::instance()->decode($token);
+        if (empty($payload)) {
+            $output = [
+                'errors' => [
+                    [
+                        'message' => "Permission denied",
+                    ]
+                ]
+            ];
+            echo json_encode($output);
+            exit;
+        }
+        $log->debug("Processing request for user {$payload['user_id']}");
+    }
+}
+
+if (empty($token)) {
+    // TODO: return an error if this is a mutation
+    $log->debug('No token was sent');
+}
 
 $queryType = new QueryType();
+$mutationType = new MutationType();
 $schema = new Schema([
-    'query' => $queryType
+    'query' => $queryType,
+    'mutation' => $mutationType,
 ]);
 
 $rawInput = file_get_contents('php://input');

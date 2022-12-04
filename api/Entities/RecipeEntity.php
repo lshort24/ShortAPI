@@ -9,10 +9,10 @@ use Monolog\Logger;
 
 class RecipeEntity
 {
-    static $instance;
-    private $database;
-    private $pdo;
-    private $log;
+    static ?self $instance = null;
+    private Database $database;
+    private PDO $pdo;
+    private Logger $log;
 
     public static function instance() : self {
         if (!self::$instance) {
@@ -28,7 +28,7 @@ class RecipeEntity
         $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
         $this->log = new Logger('graphql');
-        $this->log->pushHandler(new StreamHandler(__DIR__ . '/../../graphql.log', Logger::DEBUG));
+        $this->log->pushHandler(new StreamHandler(__DIR__ . '/../../app.log', Logger::DEBUG));
     }
 
 

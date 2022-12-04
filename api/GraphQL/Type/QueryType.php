@@ -10,14 +10,13 @@ use GraphQL\Type\Definition\ResolveInfo;
 
 use ShortAPI\GraphQL\Data\Recipe;
 use ShortAPI\Entities\RecipeEntity;
-use Throwable;
 
 class QueryType extends ObjectType {
-    private $log;
+    private Logger $log;
 
     public function __construct() {
         $this->log = new Logger('graphql');
-        $this->log->pushHandler(new StreamHandler(__DIR__ . '/../../../graphql.log', Logger::DEBUG));
+        $this->log->pushHandler(new StreamHandler(__DIR__ . '/../../../app.log', Logger::DEBUG));
 
         $recipeType = new RecipeType();
 

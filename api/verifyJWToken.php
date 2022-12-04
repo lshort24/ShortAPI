@@ -2,6 +2,7 @@
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use ShortAPI\config\Database;
+use ShortAPI\JWT;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/config/secrets.php';
@@ -85,13 +86,21 @@ session_destroy();
 session_start();
 
 // Generate an access token
-$header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);
-$payload = json_encode(['user_id' => $userId]);
-$base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
-$base64UrlPayload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payload));
-$signature = hash_hmac('sha256', $base64UrlHeader . "." . $base64UrlPayload, $secrets['authorizationSecret'], true);
-$base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
-$accessToken = $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
+try {
+    $accessToken = JWT::instance()->encode(['user_id' => $userId]);
+}
+catch (Throwable $e) {
+    $reason = 'Could not create access token.';
+    $log->debug($reason, ['ex' => $e]);
+    http_response_code(200);
+    echo json_encode([
+        'authenticated' => false,
+        'profileName' => '',
+        'failReason' => $reason
+    ]);
+    exit;
+}
+
 
 $expiresTimestamp = time() + 15 * 60; // 15 minutes
 $expiresAt = new DateTime();
@@ -119,7 +128,7 @@ catch (Throwable $e) {
 }
 
 if (!$success) {
-    $reason = 'Could create cookie for access token.';
+    $reason = 'Could not create cookie for access token.';
     $log->debug($reason);
     http_response_code(200);
     echo json_encode([
