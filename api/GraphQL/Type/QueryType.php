@@ -9,7 +9,7 @@ use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\ResolveInfo;
 
 use ShortAPI\GraphQL\Data\Recipe;
-use ShortAPI\Entities\RecipeEntity;
+use ShortAPI\services\RecipeService;
 
 class QueryType extends ObjectType {
     private Logger $log;
@@ -47,7 +47,7 @@ class QueryType extends ObjectType {
      * @noinspection PhpUnusedParameterInspection
      */
     function resolveRecipe($rootValue, array $args) : ?Recipe {
-        $record = RecipeEntity::instance()->getRecipeById($args['id']);
-        return new Recipe($record['id'], $record['title']);
+        $record = RecipeService::instance()->getRecipeById($args['id']);
+        return new Recipe($record);
     }
 }

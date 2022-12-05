@@ -6,7 +6,6 @@ use GraphQL\Type\Definition\InputObjectType;
 use GraphQL\Type\Definition\Type;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
-use ShortAPI\GraphQL\Data\Recipe;
 
 class UpdateRecipeInputType extends InputObjectType
 {
@@ -26,7 +25,7 @@ class UpdateRecipeInputType extends InputObjectType
 
         $config = [
             'name' => 'UpdateRecipeInput',
-            'description' => '',
+            'description' => 'Recipe values to update',
             'fields' => [
                 'id' => [
                     'type' => Type::nonNull(Type::id()),
@@ -37,13 +36,6 @@ class UpdateRecipeInputType extends InputObjectType
                     'description' => 'Title of the recipe'
                 ],
             ],
-            'parseValue' => function (array $values) : Recipe {
-                $this->log->debug('parsed value arg');
-                return new Recipe(
-                    $values['id'],
-                    $values['title'],
-                );
-            }
         ];
         parent::__construct($config);
     }

@@ -2,11 +2,13 @@
 
 namespace ShortAPI\GraphQL\Type;
 
+use Exception;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\Type;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use ShortAPI\GraphQL\Data\Recipe;
+use ShortAPI\services\RecipeService;
 
 class MutationType extends ObjectType
 {
@@ -29,14 +31,22 @@ class MutationType extends ObjectType
                     'resolve' => static fn ($calc, array $args): int => $args['x'] + $args['y'],
                 ],
                 'updateRecipe' => [
-                    'type' => RecipeType::instance(),
+                    'type' => Type::nonNull(RecipeType::instance()),
                     'args' => [
                         'input' => UpdateRecipeInputType::instance(),
                     ],
                     'resolve' => function ($info, array $args) : Recipe {
-                        $this->log->debug("mutation input", ['args' => $args]);
+                        $this->log->debug("mutation input", ['info' => $info, 'args' => $args]);
                         $args = $args['input'];
-                        return new Recipe($args['id'], $args['title']);
+                        // TODO: validate arguments
+                        try {
+                            $record = RecipeService::instance()->updateRecipeById($args);
+                            return new Recipe($record);
+                        }
+                        catch (Exception $ex) {
+                            $this->log->debug('Could not update recipe', ['ex' => $ex]);
+                            throw $ex;
+                        }
                     }
                 ],
             ],

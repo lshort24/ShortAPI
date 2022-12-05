@@ -3,6 +3,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+use GraphQL\Error\DebugFlag;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use GraphQL\GraphQL;
@@ -35,7 +36,7 @@ if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
             $output = [
                 'errors' => [
                     [
-                        'message' => "Permission denied",
+                        'authentication error' => "Permission denied",
                     ]
                 ]
             ];
@@ -64,7 +65,7 @@ catch (Throwable $ex) {
     $output = [
         'errors' => [
             [
-                'message' => $ex->getMessage()
+                'schema error' => $ex->getMessage()
             ]
         ]
     ];
@@ -78,18 +79,9 @@ $input = json_decode($rawInput, true);
 $query = $input['query'];
 $variableValues = $input['variables'] ?? null;
 
-try {
-    $rootValue = [];
-    $output = GraphQL::executeQuery($schema, $query, $rootValue, null, $variableValues);
-} catch (Throwable $e) {
-    $log->error('There was an error with the query', ['error' => $e->getMessage()]);
-    $output = [
-        'errors' => [
-            [
-                'message' => $e->getMessage()
-            ]
-        ]
-    ];
-}
+$rootValue = [];
+//$debugFlag = DebugFlag::NONE;
+$debugFlag = DebugFlag::INCLUDE_DEBUG_MESSAGE;
+$output = GraphQL::executeQuery($schema, $query, $rootValue, null, $variableValues)->toArray(DebugFlag::INCLUDE_DEBUG_MESSAGE);
 
 echo json_encode($output);
