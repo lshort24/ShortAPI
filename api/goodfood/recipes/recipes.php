@@ -1,5 +1,6 @@
 <?php
 
+use ShortAPI\auth\Authorization;
 use ShortAPI\config\Database;
 
 ini_set('display_errors', 1);
@@ -19,7 +20,7 @@ header("Content-Type: application/json; charset=UTF-8");
 
 $database = new Database();
 /** @var PDO $pdo */
-$pdo = $database->getConnection('goodfood');
+$pdo = $database->getConnection('goodfood', Authorization::GUEST_ROLE);
 $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
 
 try {

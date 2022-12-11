@@ -1,6 +1,7 @@
 <?php
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use ShortAPI\auth\Authorization;
 use ShortAPI\config\Database;
 use ShortAPI\JWT;
 
@@ -61,7 +62,7 @@ $params = [
 ];
 
 $database = new Database();
-$conn = $database->getConnection('timeline');
+$conn = $database->getConnection('goodfood', Authorization::GUEST_ROLE);
 $stmt = $conn->prepare($query);
 
 foreach ($params as $name => $param) {

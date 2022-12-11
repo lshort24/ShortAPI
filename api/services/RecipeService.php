@@ -1,8 +1,8 @@
 <?php
 namespace ShortAPI\services;
 
-use Exception;
 use PDO;
+use ShortAPI\auth\Authorization;
 use ShortAPI\config\Database;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
@@ -12,7 +12,6 @@ class RecipeService
 {
     static ?self $instance = null;
     private Database $database;
-    private PDO $pdo;
     private Logger $log;
 
     public static function instance() : self {
@@ -25,9 +24,6 @@ class RecipeService
 
     public function __construct() {
         $this->database = new Database();
-        $this->pdo = $this->database->getConnection('goodfood');
-        $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-
         $this->log = new Logger('api');
         $this->log->pushHandler(new StreamHandler(__DIR__ . '/../../app.log', Logger::DEBUG));
     }
@@ -36,12 +32,17 @@ class RecipeService
     /**
      * @param int $id
      * @return array
-     * @throws Exception
+     * @throws DatabaseException
      */
     public function getRecipeById(int $id) : array {
+        if (!Authorization::instance()->hasRole(Authorization::GUEST_ROLE)) {
+            $this->log->error("Permission denied.");
+            throw new DatabaseException("Permission denied.");
+        }
+
         if ($id <= 0) {
-            $this->log->debug('No id was specified.');
-            throw new Exception("Could not access recipe.");
+            $this->log->debug('No recipe id was specified.');
+            throw new DatabaseException("Could not access recipe.");
         }
 
         $fields = 'recipe_id as id, title';
@@ -49,15 +50,16 @@ class RecipeService
             'recipe_id' => $id
         ];
         $sql = "SELECT $fields FROM recipes WHERE recipe_id = :recipe_id";
-        // TODO: can we change this like the update?
 
         try {
-            $stmt = $this->pdo->prepare($sql);
+            $pdo = $this->database->getConnection('goodfood', Authorization::GUEST_ROLE);
+            $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
         }
         catch (Throwable $ex) {
             $this->log->debug("Could not fetch recipe with id $id.");
-            throw new Exception("Could not access recipe.");
+            throw new DatabaseException("Could not access recipe.");
         }
 
         $records = $stmt->fetchAll();
@@ -67,19 +69,24 @@ class RecipeService
         }
 
         $this->log->debug("Recipe with id $id was not found.");
-        throw new Exception("The recipe you requested was not found.");
+        throw new DatabaseException("The recipe you requested was not found.");
     }
 
 
     /**
      * @param array $recipeArray
      * @return array
-     * @throws Exception
+     * @throws DatabaseException
      */
     public function updateRecipeById(array $recipeArray) : array {
+        if (!Authorization::instance()->hasRole(Authorization::ADMIN_ROLE)) {
+            $this->log->error("The current user does not have the admin role.");
+            throw new DatabaseException("Permission denied.");
+        }
+
         if ($recipeArray['id'] <= 0) {
-            $this->log->debug('No id was specified.');
-            throw new Exception("Could not access recipe.");
+            $this->log->error('No recipe id was specified.');
+            throw new DatabaseException("Could not access recipe.");
         }
         $id = $recipeArray['id'];
         $set = [];
@@ -95,21 +102,17 @@ class RecipeService
         }
         $setClause = "SET " . implode(', ', $set);
         $sql = "UPDATE recipes $setClause WHERE recipe_id = :id";
-        $this->log->debug('SQL', ['sql' => $sql, 'params' => $params]);
 
         try {
-            $this->pdo->prepare($sql)->execute($params);
+            $pdo = $this->database->getConnection('goodfood', Authorization::ADMIN_ROLE);
+            $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            $pdo->prepare($sql)->execute($params);
         }
         catch (Throwable $ex) {
-            $this->log->debug('Could not update recipe', ['recipe' => $recipeArray]);
-            throw new Exception('Could not update recipe.');
+            $this->log->error('Could not update recipe', ['recipe' => $recipeArray]);
+            throw new DatabaseException('Could not update recipe.');
         }
 
-        $this->log->debug('after save');
-
-        $record = $this->getRecipeById($id);
-
-        $this->log->debug('after re-fetch', ['record' => $record]);
-        return $record;
+        return $this->getRecipeById($id);
     }
 }

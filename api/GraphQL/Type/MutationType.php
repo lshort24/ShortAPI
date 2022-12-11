@@ -36,7 +36,6 @@ class MutationType extends ObjectType
                         'input' => UpdateRecipeInputType::instance(),
                     ],
                     'resolve' => function ($info, array $args) : Recipe {
-                        $this->log->debug("mutation input", ['info' => $info, 'args' => $args]);
                         $args = $args['input'];
                         // TODO: validate arguments
                         try {
@@ -44,7 +43,7 @@ class MutationType extends ObjectType
                             return new Recipe($record);
                         }
                         catch (Exception $ex) {
-                            $this->log->debug('Could not update recipe', ['ex' => $ex]);
+                            $this->log->error('Could not update recipe', ['ex' => $ex]);
                             throw $ex;
                         }
                     }

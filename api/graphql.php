@@ -9,9 +9,9 @@ use Monolog\Logger;
 use GraphQL\GraphQL;
 use GraphQL\Type\Schema;
 
+use ShortAPI\auth\Authorization;
 use ShortAPI\GraphQL\Type\MutationType;
 use ShortAPI\GraphQL\Type\QueryType;
-use ShortAPI\JWT;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../api/config/secrets.php';
@@ -26,30 +26,11 @@ header("Access-Control-Allow-Origin: $origin");
 header("Access-Control-Allow-Headers: Accept, Origin, Content-Type, Authorization");
 header('Content-Type: application/json');
 
-$token = '';
 if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
     if (preg_match('/^Bearer (.*)$/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
         $token = $matches[1];
-
-        $payload = JWT::instance()->decode($token);
-        if (empty($payload)) {
-            $output = [
-                'errors' => [
-                    [
-                        'authentication error' => "Permission denied",
-                    ]
-                ]
-            ];
-            echo json_encode($output);
-            exit;
-        }
-        $log->debug("Processing request for user {$payload['user_id']}");
+        Authorization::instance()->setToken($token);
     }
-}
-
-if (empty($token)) {
-    // TODO: return an error if this is a mutation
-    $log->debug('No token was sent');
 }
 
 $queryType = new QueryType();

@@ -2,6 +2,7 @@
 session_start();
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use ShortAPI\auth\Authorization;
 use ShortAPI\config\Database;
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -54,7 +55,7 @@ function authenticate(string $googleClientId) : array {
     ];
 
     $database = new Database();
-    $conn = $database->getConnection('timeline');
+    $conn = $database->getConnection('timeline', Authorization::GUEST_ROLE);
     $stmt = $conn->prepare($query);
 
     foreach ($params as $name => $param) {
