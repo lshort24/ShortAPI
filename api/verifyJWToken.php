@@ -1,9 +1,9 @@
 <?php
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
-use ShortAPI\auth\Authorization;
-use ShortAPI\config\Database;
 use ShortAPI\JWT;
+use ShortAPI\services\DatabaseException;
+use ShortAPI\services\UserService;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/config/secrets.php';
@@ -46,6 +46,22 @@ if (isset($payload['sub'])) {
 }
 
 // Look the user up in our database
+try {
+    $user = UserService::instance()->getUserByUserId($userId, 'google', true);
+}
+catch (DatabaseException $ex) {
+    $log->error("Could not find user $userId in the database.", ['ex' => $ex->getMessage()]);
+    http_response_code(200);
+    echo json_encode([
+        'authenticated' => false,
+        'profileName' => '',
+        'failReason' => 'Only family members can login to the website.'
+    ]);
+    exit;
+}
+
+// Look the user up in our database
+/*
 $query = "
         SELECT *
         FROM users
@@ -76,10 +92,11 @@ if ($stmt->rowCount() === 0) {
     echo json_encode([
         'authenticated' => false,
         'profileName' => '',
-        'failReason' => 'Only family members can login to the website.'
+        'failReason' => 'Only family members can log in to the website.'
     ]);
     exit;
 }
+*/
 
 // Create a new session
 session_unset();

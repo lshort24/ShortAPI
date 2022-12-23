@@ -79,7 +79,7 @@ class Authorization
             return false;
         }
 
-        $user = UserService::instance()->getUserByUserId($payload['user_id'], true);
+        $user = UserService::instance()->getUserByUserId($payload['user_id'], 'google', true);
 
         if ($user['role'] === Authorization::USER_ROLE) {
             $this->roles = [Authorization::GUEST_ROLE, Authorization::USER_ROLE];

@@ -35,6 +35,8 @@ class RecipeService
      * @throws DatabaseException
      */
     public function getRecipeById(int $id) : array {
+        // For testing error handling
+        // throw new DatabaseException('Could not access recipe.');
         if (!Authorization::instance()->hasRole(Authorization::GUEST_ROLE)) {
             $this->log->error("Permission denied.");
             throw new DatabaseException("Permission denied.");
@@ -79,6 +81,8 @@ class RecipeService
      * @throws DatabaseException
      */
     public function updateRecipeById(array $recipeArray) : array {
+        // For testing error handling
+        // throw new DatabaseException('Could not save recipe.');
         if (!Authorization::instance()->hasRole(Authorization::ADMIN_ROLE)) {
             $this->log->error("The current user does not have the admin role.");
             throw new DatabaseException("Permission denied.");
