@@ -47,7 +47,7 @@ class RecipeService
             throw new DatabaseException("Could not access recipe.");
         }
 
-        $fields = 'recipe_id as id, title';
+        $fields = 'recipe_id as id, title, description, prep_time';
         $params = [
             'recipe_id' => $id
         ];
@@ -101,12 +101,16 @@ class RecipeService
             if ($key === 'id') {
                 continue;
             }
-            $set[] = "$key = :$key";
-            $params[$key] = $value;
+            $dbField = $key;
+            if ($dbField === 'prepTime') {
+                $dbField = 'prep_time';
+            }
+            $set[] = "$dbField = :$dbField";
+            $params[$dbField] = $value;
         }
         $setClause = "SET " . implode(', ', $set);
         $sql = "UPDATE recipes $setClause WHERE recipe_id = :id";
-
+        $this->log->debug('sql', ['sql' => $sql]);
         try {
             $pdo = $this->database->getConnection('goodfood', Authorization::ADMIN_ROLE);
             $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);

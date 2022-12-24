@@ -35,6 +35,14 @@ class UpdateRecipeInputType extends InputObjectType
                     'type' => Type::string(),
                     'description' => 'Title of the recipe'
                 ],
+                'description' => [
+                    'type' => Type::string(),
+                    'description' => 'Description of the recipe'
+                ],
+                'prepTime' => [
+                    'type' => Type::string(),
+                    'description' => 'Time it takes to make the recipe'
+                ],
             ],
         ];
         parent::__construct($config);

@@ -37,6 +37,14 @@ class RecipeType extends ObjectType {
                     'type' => Type::string(),
                     'description' => 'Title for the recipe',
                 ],
+                'description' => [
+                    'type' => Type::string(),
+                    'description' => 'Description of the recipe',
+                ],
+                'prepTime' => [
+                    'type' => Type::string(),
+                    'description' => 'Time it takes to make the recipe',
+                ],
             ],
             'resolveField' => function ($rootValue, array $args, $context, ResolveInfo $info) {
                 $resolver = 'resolve' . ucfirst($info->fieldName);
@@ -53,5 +61,13 @@ class RecipeType extends ObjectType {
 
     public function resolveTitle(Recipe $recipe) : string {
         return $recipe->title;
+    }
+
+    public function resolveDescription(Recipe $recipe) : string {
+        return $recipe->description;
+    }
+
+    public function resolvePrepTime(Recipe $recipe) : ?string {
+        return $recipe->prep_time;
     }
 }
