@@ -48,16 +48,14 @@ class RecipeService
         }
 
         $fields = 'recipe_id as id, title, description, prep_time';
-        $params = [
-            'recipe_id' => $id
-        ];
         $sql = "SELECT $fields FROM recipes WHERE recipe_id = :recipe_id";
 
         try {
             $pdo = $this->database->getConnection('goodfood', Authorization::GUEST_ROLE);
             $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
             $stmt = $pdo->prepare($sql);
-            $stmt->execute($params);
+            $stmt->bindParam('recipe_id', $id, PDO::PARAM_INT);
+            $stmt->execute();
         }
         catch (Throwable $ex) {
             $this->log->debug("Could not fetch recipe with id $id.");
@@ -92,10 +90,14 @@ class RecipeService
             $this->log->error('No recipe id was specified.');
             throw new DatabaseException("Could not access recipe.");
         }
+
         $id = $recipeArray['id'];
         $set = [];
         $params = [
-            'id' => $id,
+            'id' => [
+                'value' => $id,
+                'type' => PDO::PARAM_INT
+            ]
         ];
         foreach ($recipeArray as $key => $value) {
             if ($key === 'id') {
@@ -106,7 +108,10 @@ class RecipeService
                 $dbField = 'prep_time';
             }
             $set[] = "$dbField = :$dbField";
-            $params[$dbField] = $value;
+            $params[$dbField] = [
+                'value' => $value,
+                'type' => PDO::PARAM_STR
+            ];
         }
         $setClause = "SET " . implode(', ', $set);
         $sql = "UPDATE recipes $setClause WHERE recipe_id = :id";
@@ -114,7 +119,11 @@ class RecipeService
         try {
             $pdo = $this->database->getConnection('goodfood', Authorization::ADMIN_ROLE);
             $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-            $pdo->prepare($sql)->execute($params);
+            $stmt = $pdo->prepare($sql);
+            foreach ($params as $key => $info) {
+                $stmt->bindParam($key, $info['value'], $info['type']);
+            }
+            $stmt->execute();
         }
         catch (Throwable $ex) {
             $this->log->error('Could not update recipe', ['recipe' => $recipeArray]);
