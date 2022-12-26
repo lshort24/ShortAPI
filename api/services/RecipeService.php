@@ -43,11 +43,11 @@ class RecipeService
         }
 
         if ($id <= 0) {
-            $this->log->debug('No recipe id was specified.');
+            $this->log->debug("Recipe Service: No recipe id was specified.");
             throw new DatabaseException("Could not access recipe.");
         }
 
-        $fields = 'recipe_id as id, title, description, prep_time';
+        $fields = 'recipe_id as id, title, description, prep_time, markdown_recipe';
         $sql = "SELECT $fields FROM recipes WHERE recipe_id = :recipe_id";
 
         try {
@@ -58,7 +58,7 @@ class RecipeService
             $stmt->execute();
         }
         catch (Throwable $ex) {
-            $this->log->debug("Could not fetch recipe with id $id.");
+            $this->log->debug("Recipe Service: Could not fetch recipe with id $id.");
             throw new DatabaseException("Could not access recipe.");
         }
 
@@ -68,7 +68,7 @@ class RecipeService
             return $recipe;
         }
 
-        $this->log->debug("Recipe with id $id was not found.");
+        $this->log->debug("Recipe Service: Recipe with id $id was not found.");
         throw new DatabaseException("The recipe you requested was not found.");
     }
 
@@ -107,6 +107,9 @@ class RecipeService
             if ($dbField === 'prepTime') {
                 $dbField = 'prep_time';
             }
+            if ($dbField === 'markdownRecipe') {
+                $dbField = 'markdown_recipe';
+            }
             $set[] = "$dbField = :$dbField";
             $params[$dbField] = [
                 'value' => $value,
@@ -115,7 +118,6 @@ class RecipeService
         }
         $setClause = "SET " . implode(', ', $set);
         $sql = "UPDATE recipes $setClause WHERE recipe_id = :id";
-        $this->log->debug('sql', ['sql' => $sql]);
         try {
             $pdo = $this->database->getConnection('goodfood', Authorization::ADMIN_ROLE);
             $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);

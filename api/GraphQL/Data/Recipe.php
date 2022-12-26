@@ -11,6 +11,7 @@ class Recipe {
     public ?string $title;
     public ?string $description;
     public ?string $prep_time;
+    public ?string $markdown_recipe;
 
     public function __construct(array $properties) {
         $this->log = new Logger('api');

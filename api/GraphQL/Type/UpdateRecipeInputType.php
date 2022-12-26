@@ -43,6 +43,10 @@ class UpdateRecipeInputType extends InputObjectType
                     'type' => Type::string(),
                     'description' => 'Time it takes to make the recipe'
                 ],
+                'markdownRecipe' => [
+                    'type' => Type::string(),
+                    'description' => 'The ingredients and directions in markdown format',
+                ]
             ],
         ];
         parent::__construct($config);

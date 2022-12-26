@@ -45,6 +45,10 @@ class RecipeType extends ObjectType {
                     'type' => Type::string(),
                     'description' => 'Time it takes to make the recipe',
                 ],
+                'markdownRecipe' => [
+                    'type' => Type::string(),
+                    'description' => 'The ingredients and directions in markdown format'
+                ]
             ],
             'resolveField' => function ($rootValue, array $args, $context, ResolveInfo $info) {
                 $resolver = 'resolve' . ucfirst($info->fieldName);
@@ -69,5 +73,9 @@ class RecipeType extends ObjectType {
 
     public function resolvePrepTime(Recipe $recipe) : ?string {
         return $recipe->prep_time;
+    }
+
+    public function resolveMarkdownRecipe(Recipe $recipe) : ?string {
+        return $recipe->markdown_recipe;
     }
 }
