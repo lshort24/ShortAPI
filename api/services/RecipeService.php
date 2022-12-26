@@ -38,7 +38,7 @@ class RecipeService
         // For testing error handling
         // throw new DatabaseException('Could not access recipe.');
         if (!Authorization::instance()->hasRole(Authorization::GUEST_ROLE)) {
-            $this->log->error("Permission denied.");
+            $this->log->error("Recipe Service: Permission denied.");
             throw new DatabaseException("Permission denied.");
         }
 
@@ -82,12 +82,12 @@ class RecipeService
         // For testing error handling
         // throw new DatabaseException('Could not save recipe.');
         if (!Authorization::instance()->hasRole(Authorization::ADMIN_ROLE)) {
-            $this->log->error("The current user does not have the admin role.");
+            $this->log->error("Recipe Service: The current user does not have the admin role.");
             throw new DatabaseException("Permission denied.");
         }
 
         if ($recipeArray['id'] <= 0) {
-            $this->log->error('No recipe id was specified.');
+            $this->log->error("Recipe Service: No recipe id was specified.");
             throw new DatabaseException("Could not access recipe.");
         }
 
@@ -128,7 +128,7 @@ class RecipeService
             $stmt->execute();
         }
         catch (Throwable $ex) {
-            $this->log->error('Could not update recipe', ['recipe' => $recipeArray]);
+            $this->log->error("Recipe Service: Could not update recipe", ['recipe' => $recipeArray]);
             throw new DatabaseException('Could not update recipe.');
         }
 

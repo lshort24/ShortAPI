@@ -6,6 +6,7 @@ use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\Type;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use ShortAPI\GraphQL\Data\GraphQLException;
 use ShortAPI\GraphQL\Data\Recipe;
 use ShortAPI\services\RecipeService;
 
@@ -36,7 +37,10 @@ class MutationType extends ObjectType
                     ],
                     'resolve' => function ($info, array $args) : Recipe {
                         $args = $args['input'];
-                        // TODO: validate arguments
+                        if (array_key_exists('title', $args) && empty(trim($args['title']))) {
+                            throw new GraphQLException("A title is required.");
+                        }
+
                         $record = RecipeService::instance()->updateRecipeById($args);
                         return new Recipe($record);
                     }
