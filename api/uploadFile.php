@@ -67,7 +67,7 @@ if (!$imageInfo) {
 
 // Check if file already exists
 if (file_exists($targetFile)) {
-    $message = "Sorry, file already exists. Rename the file and re-upload.";
+    $message = "A photo with that name already exists. Rename the file and try again.";
     $log->error($message);
     echo json_encode([
         'error' => [
