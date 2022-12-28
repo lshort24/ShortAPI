@@ -47,7 +47,7 @@ class RecipeService
             throw new DatabaseException("Could not access recipe.");
         }
 
-        $fields = 'recipe_id as id, title, description, prep_time, markdown_recipe';
+        $fields = 'recipe_id as id, title, description, prep_time, photo, markdown_recipe';
         $sql = "SELECT $fields FROM recipes WHERE recipe_id = :recipe_id";
 
         try {

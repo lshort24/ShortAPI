@@ -45,6 +45,10 @@ class RecipeType extends ObjectType {
                     'type' => Type::string(),
                     'description' => 'Time it takes to make the recipe',
                 ],
+                'photo' => [
+                    'type' => Type::string(),
+                    'description' => 'Photo of the dish made from the recipe.'
+                ],
                 'markdownRecipe' => [
                     'type' => Type::string(),
                     'description' => 'The ingredients and directions in markdown format'
@@ -73,6 +77,10 @@ class RecipeType extends ObjectType {
 
     public function resolvePrepTime(Recipe $recipe) : ?string {
         return $recipe->prep_time;
+    }
+
+    public function resolvePhoto(Recipe $recipe) : ?string {
+        return $recipe->photo;
     }
 
     public function resolveMarkdownRecipe(Recipe $recipe) : ?string {

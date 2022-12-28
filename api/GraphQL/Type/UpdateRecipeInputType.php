@@ -43,6 +43,10 @@ class UpdateRecipeInputType extends InputObjectType
                     'type' => Type::string(),
                     'description' => 'Time it takes to make the recipe'
                 ],
+                'photo' => [
+                    'type' => Type::string(),
+                    'description' => 'Photo of the dish made from the recipe'
+                ],
                 'markdownRecipe' => [
                     'type' => Type::string(),
                     'description' => 'The ingredients and directions in markdown format',
