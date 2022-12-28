@@ -8,6 +8,9 @@ use GraphQL\Type\Definition\ResolveInfo;
 use GraphQL\Type\Definition\Type;
 
 use ShortAPI\GraphQL\Data\Recipe;
+use ShortAPI\GraphQL\Data\Tag;
+use ShortAPI\services\DatabaseException;
+use ShortAPI\services\TagService;
 
 class RecipeType extends ObjectType {
     private Logger $log;
@@ -52,6 +55,10 @@ class RecipeType extends ObjectType {
                 'markdownRecipe' => [
                     'type' => Type::string(),
                     'description' => 'The ingredients and directions in markdown format'
+                ],
+                'tags' => [
+                    'type' => Type::listOf(TagType::instance()),
+                    'description' => 'Labels that can be added to a recipe for better search results.'
                 ]
             ],
             'resolveField' => function ($rootValue, array $args, $context, ResolveInfo $info) {
@@ -85,5 +92,19 @@ class RecipeType extends ObjectType {
 
     public function resolveMarkdownRecipe(Recipe $recipe) : ?string {
         return $recipe->markdown_recipe;
+    }
+
+    /**
+     * @param Recipe $recipe
+     * @return array
+     * @throws DatabaseException
+     */
+    public function resolveTags(Recipe $recipe) : array {
+        return array_map(function ($record) {
+            return new Tag([
+                'id' => $record['label_id'],
+                'name' => $record['tag_name']
+            ]);
+        }, TagService::instance()->getTagsByRecipeId($recipe->id));
     }
 }
