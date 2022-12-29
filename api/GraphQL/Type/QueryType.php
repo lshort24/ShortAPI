@@ -9,7 +9,10 @@ use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\ResolveInfo;
 
 use ShortAPI\GraphQL\Data\Recipe;
+use ShortAPI\GraphQL\Data\Tag;
+use ShortAPI\services\DatabaseException;
 use ShortAPI\services\RecipeService;
+use ShortAPI\services\TagService;
 
 class QueryType extends ObjectType {
     private Logger $log;
@@ -28,7 +31,11 @@ class QueryType extends ObjectType {
                     'args' => [
                         'id' => Type::nonNull(Type::id()),
                     ]
-                ]
+                ],
+                'tags' => [
+                    'type' => Type::ListOf(TagType::instance()),
+                    'description' => 'All possible tags that can be assigned to a recipe.'
+                ],
             ],
             'resolveField' => function ($rootValue, array $args, $context, ResolveInfo $info) {
                 $resolver = 'resolve' . ucfirst($info->fieldName);
@@ -49,5 +56,16 @@ class QueryType extends ObjectType {
     function resolveRecipe($rootValue, array $args) : ?Recipe {
         $record = RecipeService::instance()->getRecipeById($args['id']);
         return new Recipe($record);
+    }
+
+
+    /**
+     * @return array
+     * @throws DatabaseException
+     */
+    function resolveTags() : array {
+        return array_map(function ($record) {
+            return new Tag($record);
+        }, TagService::instance()->getAllTags());
     }
 }

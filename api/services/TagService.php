@@ -39,7 +39,7 @@ class TagService
      */
     public function getTagsByRecipeId(int $recipeId) : array {
         if (!Authorization::instance()->hasRole(Authorization::GUEST_ROLE)) {
-            $this->log->error(self::SERVICE_NAME . ": Permission denied.");
+            $this->log->error(self::SERVICE_NAME . ": The user does not have the guest role.");
             throw new DatabaseException("Permission denied.");
         }
 
@@ -64,7 +64,34 @@ SQL;
             $stmt->execute();
         }
         catch (Throwable $ex) {
-            $this->log->debug(self::SERVICE_NAME . ": Could not fetch recipe with id $recipeId.");
+            $this->log->debug(self::SERVICE_NAME . ": Could not fetch tags for recipe with id $recipeId.");
+            throw new DatabaseException("Could not access recipe tags.");
+        }
+
+        return $stmt->fetchAll();
+    }
+
+
+    /**
+     * @return array
+     * @throws DatabaseException
+     */
+    public function getAllTags() : array {
+        if (!Authorization::instance()->hasRole(Authorization::GUEST_ROLE)) {
+            $this->log->error(self::SERVICE_NAME . ": The user does not have the guest role.");
+            throw new DatabaseException("Permission denied.");
+        }
+
+        $sql = "SELECT label_id as id, name FROM labels";
+
+        try {
+            $pdo = $this->database->getConnection('goodfood', Authorization::GUEST_ROLE);
+            $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute();
+        }
+        catch (Throwable $ex) {
+            $this->log->debug(self::SERVICE_NAME . ": Could not fetch all tags.");
             throw new DatabaseException("Could not access recipe tags.");
         }
 

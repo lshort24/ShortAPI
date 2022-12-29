@@ -61,8 +61,8 @@ $query = $input['query'];
 $variableValues = $input['variables'] ?? null;
 
 $rootValue = [];
-//$debugFlag = DebugFlag::NONE;
-$debugFlag = DebugFlag::INCLUDE_DEBUG_MESSAGE;
-$output = GraphQL::executeQuery($schema, $query, $rootValue, null, $variableValues)->toArray(DebugFlag::INCLUDE_DEBUG_MESSAGE);
+$debugFlag = DebugFlag::NONE;
+//$debugFlag = DebugFlag::INCLUDE_DEBUG_MESSAGE;
+$output = GraphQL::executeQuery($schema, $query, $rootValue, null, $variableValues)->toArray($debugFlag);
 
 echo json_encode($output);
