@@ -50,6 +50,10 @@ class UpdateRecipeInputType extends InputObjectType
                 'markdownRecipe' => [
                     'type' => Type::string(),
                     'description' => 'The ingredients and directions in markdown format',
+                ],
+                'tags' => [
+                    'type' => Type::listOf(Type::id()),
+                    'description' => 'The complete list of labels to apply to the recipe.'
                 ]
             ],
         ];

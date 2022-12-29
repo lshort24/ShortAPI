@@ -10,6 +10,8 @@ use Throwable;
 
 class RecipeService
 {
+    const SERVICE_NAME = 'Recipe Service';
+
     static ?self $instance = null;
     private Database $database;
     private Logger $log;
@@ -38,12 +40,12 @@ class RecipeService
         // For testing error handling
         // throw new DatabaseException('Could not access recipe.');
         if (!Authorization::instance()->hasRole(Authorization::GUEST_ROLE)) {
-            $this->log->error("Recipe Service: Permission denied.");
+            $this->log->error(self::SERVICE_NAME . ": Permission denied.");
             throw new DatabaseException("Permission denied.");
         }
 
         if ($id <= 0) {
-            $this->log->debug("Recipe Service: No recipe id was specified.");
+            $this->log->debug(self::SERVICE_NAME . ": No recipe id was specified.");
             throw new DatabaseException("Could not access recipe.");
         }
 
@@ -58,7 +60,7 @@ class RecipeService
             $stmt->execute();
         }
         catch (Throwable $ex) {
-            $this->log->debug("Recipe Service: Could not fetch recipe with id $id.");
+            $this->log->debug(self::SERVICE_NAME . ": Could not fetch recipe with id $id.");
             throw new DatabaseException("Could not access recipe.");
         }
 
@@ -68,7 +70,7 @@ class RecipeService
             return $recipe;
         }
 
-        $this->log->debug("Recipe Service: Recipe with id $id was not found.");
+        $this->log->debug(self::SERVICE_NAME . ": Recipe with id $id was not found.");
         throw new DatabaseException("The recipe you requested was not found.");
     }
 
@@ -82,25 +84,25 @@ class RecipeService
         // For testing error handling
         // throw new DatabaseException('Could not save recipe.');
         if (!Authorization::instance()->hasRole(Authorization::ADMIN_ROLE)) {
-            $this->log->error("Recipe Service: The current user does not have the admin role.");
+            $this->log->error(self::SERVICE_NAME . ": The current user does not have the admin role.");
             throw new DatabaseException("Permission denied.");
         }
 
         if ($recipeArray['id'] <= 0) {
-            $this->log->error("Recipe Service: No recipe id was specified.");
+            $this->log->error(self::SERVICE_NAME . ": No recipe id was specified.");
             throw new DatabaseException("Could not access recipe.");
         }
 
-        $id = $recipeArray['id'];
+        $recipeId = $recipeArray['id'];
         $set = [];
         $params = [
             'id' => [
-                'value' => $id,
+                'value' => $recipeId,
                 'type' => PDO::PARAM_INT
             ]
         ];
         foreach ($recipeArray as $key => $value) {
-            if ($key === 'id') {
+            if ($key === 'id' || $key === 'tags') {
                 continue;
             }
             $dbField = $key;
@@ -116,22 +118,29 @@ class RecipeService
                 'type' => PDO::PARAM_STR
             ];
         }
-        $setClause = "SET " . implode(', ', $set);
-        $sql = "UPDATE recipes $setClause WHERE recipe_id = :id";
-        try {
-            $pdo = $this->database->getConnection('goodfood', Authorization::ADMIN_ROLE);
-            $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-            $stmt = $pdo->prepare($sql);
-            foreach ($params as $key => $info) {
-                $stmt->bindParam($key, $info['value'], $info['type']);
+
+        if (!empty($set)) {
+            $setClause = "SET " . implode(', ', $set);
+            $sql = "UPDATE recipes $setClause WHERE recipe_id = :id";
+            try {
+                $pdo = $this->database->getConnection('goodfood', Authorization::ADMIN_ROLE);
+                $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+                $stmt = $pdo->prepare($sql);
+                foreach ($params as $key => $info) {
+                    $stmt->bindParam($key, $info['value'], $info['type']);
+                }
+                $stmt->execute();
             }
-            $stmt->execute();
-        }
-        catch (Throwable $ex) {
-            $this->log->error("Recipe Service: Could not update recipe", ['recipe' => $recipeArray]);
-            throw new DatabaseException('Could not update recipe.');
+            catch (Throwable $ex) {
+                $this->log->error(self::SERVICE_NAME . ": Could not update recipe", ['recipe' => $recipeArray]);
+                throw new DatabaseException('Could not update recipe.');
+            }
         }
 
-        return $this->getRecipeById($id);
+        if (!empty($recipeArray['tags'])) {
+            TagService::instance()->updateTags($recipeId, $recipeArray['tags']);
+        }
+
+        return $this->getRecipeById($recipeId);
     }
 }
