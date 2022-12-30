@@ -40,7 +40,8 @@ if (isset($payload['sub'])) {
     echo json_encode([
         'authenticated' => false,
         'profileName' => '',
-        'failReason' => 'Could not verify your Google identity'
+        'failReason' => 'Could not verify your Google identity',
+        'role' => 'guest',
     ]);
     exit;
 }
@@ -55,7 +56,8 @@ catch (DatabaseException $ex) {
     echo json_encode([
         'authenticated' => false,
         'profileName' => '',
-        'failReason' => 'Only family members can login to the website.'
+        'failReason' => 'Only family members can login to the website.',
+        'role' => 'guest',
     ]);
     exit;
 }
@@ -81,7 +83,8 @@ catch (Throwable $e) {
     echo json_encode([
         'authenticated' => false,
         'profileName' => '',
-        'failReason' => $reason
+        'failReason' => $reason,
+        'role' => 'guest',
     ]);
     exit;
 }
@@ -107,7 +110,8 @@ catch (Throwable $e) {
     echo json_encode([
         'authenticated' => false,
         'profileName' => '',
-        'failReason' => 'Server error'
+        'failReason' => 'Server error',
+        'role' => 'guest',
     ]);
     exit;
 }
@@ -119,7 +123,8 @@ if (!$success) {
     echo json_encode([
         'authenticated' => false,
         'profileName' => '',
-        'failReason' => $reason
+        'failReason' => $reason,
+        'role' => 'guest',
     ]);
     exit;
 }
@@ -128,5 +133,6 @@ http_response_code(200);
 echo json_encode([
     'authenticated' => true,
     'profileName' => $profileName,
-    'failReason' => ''
+    'failReason' => '',
+    'role' => $user['role'],
 ]);
