@@ -102,7 +102,7 @@ class RecipeService
             ]
         ];
         foreach ($recipeArray as $key => $value) {
-            if ($key === 'id' || $key === 'tags') {
+            if ($key === 'id' || $key === 'tagIds') {
                 continue;
             }
             $dbField = $key;
@@ -137,8 +137,8 @@ class RecipeService
             }
         }
 
-        if (!empty($recipeArray['tags'])) {
-            TagService::instance()->updateTags($recipeId, $recipeArray['tags']);
+        if (!empty($recipeArray['tagIds'])) {
+            TagService::instance()->updateTags($recipeId, $recipeArray['tagIds']);
         }
 
         return $this->getRecipeById($recipeId);
