@@ -42,7 +42,7 @@ try {
     ]);
 }
 catch (Throwable $ex) {
-    $log->debug('Schema error', ['ex' => $ex]);
+    $log->debug('GraphQL: Schema error', ['ex' => $ex]);
     $output = [
         'errors' => [
             [
@@ -64,5 +64,21 @@ $rootValue = [];
 $debugFlag = DebugFlag::NONE;
 //$debugFlag = DebugFlag::INCLUDE_DEBUG_MESSAGE;
 $output = GraphQL::executeQuery($schema, $query, $rootValue, null, $variableValues)->toArray($debugFlag);
+
+// Re-write GraphQL errors
+if (isset($output['errors'])) {
+    $output['errors'] = array_map(function ($error) use ($log) {
+        $message = $error['message'];
+        if ($error['extensions']['category'] === 'graphql') {
+            $message = 'There was an error with your request.';
+            $log->error('GraphQL: Rewriting GraphQL error message.', ['graphqlError' => $error['message']]);
+        }
+        return [
+            'extensions' => $error['extensions'],
+            'locations' => $error['location'],
+            'message' => $message,
+        ];
+    }, $output['errors']);
+}
 
 echo json_encode($output);
