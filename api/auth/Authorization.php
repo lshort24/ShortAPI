@@ -74,12 +74,12 @@ class Authorization
             return false;
         }
 
-        if (empty($payload['user_id'])) {
+        if (empty($payload['userId'])) {
             $this->log->error("No user id was specified in the authorization token.");
             return false;
         }
 
-        $user = UserService::instance()->getUserByUserId($payload['user_id'], 'google', true);
+        $user = UserService::instance()->getUserByUserId($payload['userId'], 'google', true);
 
         if ($user['role'] === Authorization::USER_ROLE) {
             $this->roles = [Authorization::GUEST_ROLE, Authorization::USER_ROLE];

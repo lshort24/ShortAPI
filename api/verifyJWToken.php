@@ -60,44 +60,6 @@ catch (DatabaseException $ex) {
     exit;
 }
 
-// Look the user up in our database
-/*
-$query = "
-        SELECT *
-        FROM users
-        WHERE 
-            user_id = :userId AND 
-            user_type = 'google'
-    ";
-
-$params = [
-    ':userId' => [
-        "value" => $userId,
-        "type" => PDO::PARAM_STR
-    ]
-];
-
-$database = new Database();
-$conn = $database->getConnection('goodfood', Authorization::GUEST_ROLE);
-$stmt = $conn->prepare($query);
-
-foreach ($params as $name => $param) {
-    $stmt->bindParam($name, $param["value"], $param["type"]);
-}
-
-$stmt->execute();
-if ($stmt->rowCount() === 0) {
-    $log->debug("Could not find user $userId in the database.");
-    http_response_code(200);
-    echo json_encode([
-        'authenticated' => false,
-        'profileName' => '',
-        'failReason' => 'Only family members can log in to the website.'
-    ]);
-    exit;
-}
-*/
-
 // Create a new session
 session_unset();
 session_destroy();
@@ -105,7 +67,12 @@ session_start();
 
 // Generate an access token
 try {
-    $accessToken = JWT::instance()->encode(['user_id' => $userId]);
+    $accessTokenPayload = [
+        'userId' => $userId,
+        'profileName' => $profileName,
+        'role' => $user['role']
+    ];
+    $accessToken = JWT::instance()->encode($accessTokenPayload);
 }
 catch (Throwable $e) {
     $reason = 'Could not create access token.';
