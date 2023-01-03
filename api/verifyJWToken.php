@@ -69,10 +69,15 @@ session_start();
 
 // Generate an access token
 try {
+    $expiresAt = new DateTime();
+    $expiresAt->setTimezone(new DateTimeZone('America/Denver'));
+    $expiresAt->modify('+15 minutes');
     $accessTokenPayload = [
         'userId' => $userId,
         'profileName' => $profileName,
-        'role' => $user['role']
+        'role' => $user['role'],
+        'expiresAt' => $expiresAt->getTimestamp(),
+        'expiresAtDate' => $expiresAt->format('D, M d Y g:i A T')
     ];
     $accessToken = JWT::instance()->encode($accessTokenPayload);
 }
@@ -89,50 +94,11 @@ catch (Throwable $e) {
     exit;
 }
 
-
-$expiresTimestamp = time() + 15 * 60; // 15 minutes
-$expiresAt = new DateTime();
-$expiresAt->setTimestamp($expiresTimestamp);
-$expiresAtString = $expiresAt->format('Y-m-d H:i:s');
-
-try {
-    $success = setcookie(
-        'accessToken',
-        $accessToken,
-        time() + 15 * 60,
-        '/',
-        'shortsrecipes.com'
-    );
-}
-catch (Throwable $e) {
-    $log->debug('Exception', ['ex' => $e->getMessage()]);
-    http_response_code(200);
-    echo json_encode([
-        'authenticated' => false,
-        'profileName' => '',
-        'failReason' => 'Server error',
-        'role' => 'guest',
-    ]);
-    exit;
-}
-
-if (!$success) {
-    $reason = 'Could not create cookie for access token.';
-    $log->debug($reason);
-    http_response_code(200);
-    echo json_encode([
-        'authenticated' => false,
-        'profileName' => '',
-        'failReason' => $reason,
-        'role' => 'guest',
-    ]);
-    exit;
-}
-
 http_response_code(200);
 echo json_encode([
     'authenticated' => true,
     'profileName' => $profileName,
     'failReason' => '',
     'role' => $user['role'],
+    'accessToken' => $accessToken
 ]);

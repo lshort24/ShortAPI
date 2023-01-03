@@ -26,10 +26,15 @@ header("Access-Control-Allow-Origin: $origin");
 header("Access-Control-Allow-Headers: Accept, Origin, Content-Type, Authorization");
 header('Content-Type: application/json');
 
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
     if (preg_match('/^Bearer (.*)$/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
         $token = $matches[1];
-        Authorization::instance()->setToken($token);
+            Authorization::instance()->setToken($token);
     }
 }
 
@@ -75,7 +80,7 @@ if (isset($output['errors'])) {
         }
         return [
             'extensions' => $error['extensions'],
-            'locations' => $error['location'],
+            'locations' => $error['location'] ?? null,
             'message' => $message,
         ];
     }, $output['errors']);
