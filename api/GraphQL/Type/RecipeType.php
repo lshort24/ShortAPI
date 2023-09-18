@@ -79,11 +79,11 @@ class RecipeType extends ObjectType {
     }
 
     public function resolveDescription(Recipe $recipe) : string {
-        return $recipe->description;
+        return $recipe->description ?? '';
     }
 
     public function resolvePrepTime(Recipe $recipe) : ?string {
-        return $recipe->prep_time;
+        return $recipe->prep_time ?? '';
     }
 
     public function resolvePhoto(Recipe $recipe) : ?string {
@@ -91,7 +91,7 @@ class RecipeType extends ObjectType {
     }
 
     public function resolveMarkdownRecipe(Recipe $recipe) : ?string {
-        return $recipe->markdown_recipe;
+        return $recipe->markdown_recipe ?? '';
     }
 
     /**
