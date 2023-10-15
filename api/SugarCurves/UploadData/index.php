@@ -23,11 +23,20 @@ $log = new Logger('sugarCurvesAPI');
 $log->pushHandler(new StreamHandler(__DIR__ . '/../../../sugar_curves_api.log', Logger::DEBUG));
 
 function exitWithError(string $message, Logger $log) : void {
+    http_response_code(200);
     $log->error($message);
     echo json_encode([
-        'error' => [
-            'message' => $message
-        ]
+        'error' => $message,
+        'status' => 'There was an error'
+    ]);
+    exit;
+}
+
+function exitWithStatus(string $message, Logger $log) : void {
+    http_response_code(200);
+    $log->debug($message);
+    echo json_encode([
+        'status' => $message
     ]);
     exit;
 }
@@ -148,7 +157,7 @@ while (($line = fgets($dataFile)) !== false) {
 fclose($dataFile);
 
 if (count($data) === 0) {
-    exitWithError("There were no new records to upload.", $log);
+    exitWithStatus("There were no new records to upload.", $log);
 }
 
 $rows = 0;
@@ -164,9 +173,4 @@ catch (Throwable $ex) {
     exitWithError($message, $log);
 }
 
-$log->debug("Successfully uploaded $rows row(s).");
-http_response_code(200);
-$response = [
-    'message' => "Successfully uploaded $rows row(s)."
-];
-echo json_encode($response);
+exitWithStatus("Successfully uploaded $rows row(s).", $log);
