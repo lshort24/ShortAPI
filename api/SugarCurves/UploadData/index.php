@@ -19,6 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+$log = new Logger('sugarCurvesAPI');
+$log->pushHandler(new StreamHandler(__DIR__ . '/../../../sugar_curves_api.log', Logger::DEBUG));
+
 function exitWithError(string $message, Logger $log) : void {
     $log->error($message);
     echo json_encode([
@@ -28,9 +31,6 @@ function exitWithError(string $message, Logger $log) : void {
     ]);
     exit;
 }
-
-$log = new Logger('sugarCurvesAPI');
-$log->pushHandler(new StreamHandler(__DIR__ . '/../../../sugar_curves_api.log', Logger::DEBUG));
 
 // Check file size
 if ($_FILES["file"]["size"] > 2 * 1000000) {
@@ -42,17 +42,60 @@ if ($_FILES['file']['type'] != 'text/csv') {
     exitWithError("Sorry, only text/csv file types are allowed.", $log);
 }
 
-$log->debug("Uploading file. Type = {$_FILES['file']['type']}.");
+/*
+$startDate = $_POST['startDate'];
+$endDate = $_POST['endDate'];
+$log->debug("Deleting old data entries.", ['startDate' => $startDate, 'endDate' => $endDate]);
+try {
+    $numRows = DataService::instance()->clearData(24, $startDate, $endDate);
+    $log->debug("Deleted $numRows rows.");
+}
+catch (DatabaseException $ex) {
+    exitWithError($ex->getMessage(), $log);
+}
+*/
+
+$minTimestampString = '2023-10-01';
+$minTimestamp = strtotime($minTimestampString);
+if (!$minTimestamp) {
+    exitWithError(htmlentities("Invalid minimum timestamp '$minTimestampString'."), $log);
+}
+$lastTimestamp = '';
+try {
+    $lastTimestampString = DataService::instance()->getMaxTimestamp(24);
+    if ($lastTimestampString) {
+        $lastTimestamp = strtotime($lastTimestampString);
+        if (!$lastTimestamp) {
+            exitWithError(htmlentities("Invalid last timestamp '$minTimestampString'."), $log);
+        }
+    }
+    else {
+        $lastTimestamp = $minTimestamp;
+    }
+}
+catch (Throwable $ex) {
+    exitWithError($ex->getMessage(), $log);
+}
+if (!$lastTimestamp) {
+    exitWithError("Something went wrong determining the last timestamp.", $log);
+}
+$log->debug("Uploading file.", ['type' => $_FILES['file']['type']]);
 
 $dataFile = fopen($_FILES['file']['tmp_name'], "r");
 if (!$dataFile) {
     exitWithError("Could not upload file {$_FILES['file']['name']}.", $log);
 }
-$lineNo = 1;
-$fromDateString = '2023-08-21';
+$lineNo = 0;
 $data = [];
+$showProcessMessage = true;
 while (($line = fgets($dataFile)) !== false) {
-    if ($lineNo > 100) {
+    $lineNo++;
+    if ($lineNo <= 2) {
+        // Skip header lines
+        continue;
+    }
+    if ($lineNo > 50000) {
+        $log->error("Exiting early because of too many lines.");
         break;
     }
     // Device, Serial Number, Timestamp (Y-m-d h:i A), Record Type, Glucose
@@ -67,24 +110,46 @@ while (($line = fgets($dataFile)) !== false) {
         continue;
     }
     $timestampString = $fields[2];
-    [$dateString, $timeString, $ampm] = explode(' ', $timestampString);
-
-    if ($dateString != $fromDateString) {
+    $timestamp = strtotime($timestampString);
+    if (!$timestamp) {
+        exitWithError(htmlentities("Invalid timestamp '$timestampString'."), $log);
+    }
+    if ($timestamp <= $lastTimestamp) {
         continue;
     }
-    $timestamp = DateTime::createFromFormat('Y-m-d h:i A', $timestampString);
-    $sqlTimestampString = $timestamp->format('Y-m-d H:i:s');
+
+    if ($showProcessMessage) {
+        $log->debug("Processing record with timestamp '$timestampString'.");
+        $showProcessMessage = false;
+    }
+
+    $sqlTimestamp = '';
+    try {
+        $timestampDate = new DateTime($timestampString);
+        $sqlTimestamp = $timestampDate->format('Y-m-d H:i:s');
+    }
+    catch (Throwable $ex) {
+        $message = "Could not create SQL timestamp";
+        $log->error($message, ['ex' => $ex->getMessage(), ['timestampString' => $timestampString]]);
+        exitWithError(htmlentities($message), $log);
+    }
+    if (!$sqlTimestamp) {
+        exitWithError("Something went wrong creating the SQL timestamp.", $log);
+    }
     $glucose = intval($fields[4]);
 
     $row = [
         'user_id' => 24,
-        'timestamp' => $sqlTimestampString,
+        'timestamp' => $sqlTimestamp,
         'glucose' => $glucose
     ];
     $data[] = $row;
-    $lineNo++;
 }
 fclose($dataFile);
+
+if (count($data) === 0) {
+    exitWithError("There were no new records to upload.", $log);
+}
 
 $rows = 0;
 try {
