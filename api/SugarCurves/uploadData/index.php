@@ -51,7 +51,7 @@ if ($_FILES['file']['type'] != 'text/csv') {
     exitWithError("Sorry, only text/csv file types are allowed.", $log);
 }
 
-/*
+/**
 $startDate = $_POST['startDate'];
 $endDate = $_POST['endDate'];
 $log->debug("Deleting old data entries.", ['startDate' => $startDate, 'endDate' => $endDate]);
