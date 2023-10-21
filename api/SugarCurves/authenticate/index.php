@@ -1,9 +1,12 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+//ini_set('display_errors', 1);
+//ini_set('display_startup_errors', 1);
+//error_reporting(E_ALL);
 
 require __DIR__ . '/../../../vendor/autoload.php';
+require_once __DIR__ . '/../../config/secrets.php';
+
+use Firebase\JWT\JWT;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use ShortAPI\services\DatabaseException;
@@ -20,6 +23,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 $log = new Logger('sugarCurvesAPI');
 $log->pushHandler(new StreamHandler(__DIR__ . '/../../../sugar_curves_api.log', Logger::DEBUG));
+
+function exitWithToken(string $token, Logger $log): void {
+    http_response_code(200);
+    $log->debug("Generated token");
+    echo json_encode([
+        'token' => $token
+    ]);
+    exit;
+}
 
 function exitWithStatus(string $message, Logger $log) : void {
     http_response_code(200);
@@ -54,6 +66,7 @@ $googleId = $_POST['googleId'];
 $name = $_POST['name'];
 
 // Look up the user in the database by google id
+$user = [];
 try {
     $user = UserService::instance()->find_user_by_google_id($googleId);
 }
@@ -62,9 +75,15 @@ catch (DatabaseException $ex) {
     exitWithError("Database exception", $log);
 }
 
-if (empty($user)) {
+if (empty($user['googleId'])) {
     exitWithError("Sorry, your Google user does not have a SugarCurves account.", $log);
 }
 
-
-exitWithStatus("found user", $log);
+$jwt = new JWT();
+$payload = [
+    'googleId' => $user['googleId'],
+    'iat' => strtotime('1 hour')
+];
+$secrets = getSecrets();
+$token = $jwt->encode($payload, $secrets['authorizationSecret']);
+exitWithToken($token, $log);
