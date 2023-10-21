@@ -33,30 +33,11 @@ function exitWithToken(string $token, Logger $log): void {
     exit;
 }
 
-function exitWithStatus(string $message, Logger $log) : void {
-    http_response_code(200);
-    $log->debug($message);
-    echo json_encode([
-        'status' => $message
-    ]);
-    exit;
-}
-
 function exitWithError(string $message, Logger $log) : void {
     http_response_code(200);
     $log->error($message);
     echo json_encode([
         'status' => 'error',
-        'message' => $message
-    ]);
-    exit;
-}
-
-function exitWithRevoked(string $message, Logger $log) : void {
-    http_response_code(200);
-    $log->debug($message);
-    echo json_encode([
-        'status' => 'revoked',
         'message' => $message
     ]);
     exit;
@@ -86,4 +67,12 @@ $payload = [
 ];
 $secrets = getSecrets();
 $token = $jwt->encode($payload, $secrets['authorizationSecret']);
+
+// Add the token to the database
+try {
+    UserService::instance()->updateAccessToken($user['id'], $token);
+}
+catch (DatabaseException $ex) {
+    exitWithError("Could not update user's access token.", $log);
+}
 exitWithToken($token, $log);
