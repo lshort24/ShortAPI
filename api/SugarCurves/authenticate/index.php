@@ -24,11 +24,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $log = new Logger('sugarCurvesAPI');
 $log->pushHandler(new StreamHandler(__DIR__ . '/../../../sugar_curves_api.log', Logger::DEBUG));
 
-function exitWithToken(string $token, Logger $log): void {
+function exitWithToken(string $accessToken, Logger $log): void {
     http_response_code(200);
     $log->debug("Generated token");
     echo json_encode([
-        'token' => $token
+        'status' => 'success',
+        'message' => null,
+        'accessToken' => $accessToken
     ]);
     exit;
 }
@@ -38,7 +40,8 @@ function exitWithError(string $message, Logger $log) : void {
     $log->error($message);
     echo json_encode([
         'status' => 'error',
-        'message' => $message
+        'message' => $message,
+        'accessToken' => null
     ]);
     exit;
 }
@@ -53,11 +56,13 @@ try {
 }
 catch (DatabaseException $ex) {
     $log->error("Database exception", ['ex' => $ex->getMessage(), 'googleId' => $googleId]);
-    exitWithError("Database exception", $log);
+    exitWithError("There was a database error while looking up the SugarCurves user.", $log);
 }
 
 if (empty($user['googleId'])) {
-    exitWithError("Sorry, your Google user does not have a SugarCurves account.", $log);
+    $message = "Sorry, your Google user does not have a SugarCurves account.";
+    $log->error($message, ['googleId' => $googleId]);
+    exitWithError($message, $log);
 }
 
 $jwt = new JWT();
@@ -73,6 +78,8 @@ try {
     UserService::instance()->updateAccessToken($user['id'], $token);
 }
 catch (DatabaseException $ex) {
-    exitWithError("Could not update user's access token.", $log);
+    $message = "Could not update user's access token.";
+    $log->error($message, ['userId' => $user['id'], 'googleId' => $googleId]);
+    exitWithError($message, $log);
 }
 exitWithToken($token, $log);
