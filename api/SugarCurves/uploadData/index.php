@@ -3,16 +3,16 @@
 //ini_set('display_startup_errors', 1);
 //error_reporting(E_ALL);
 
+header("Access-Control-Allow-Origin: http://localhost:3000");
+header("Access-Control-Allow-Headers: Accept, Origin, Content-Type, Authorization");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header('Content-Type: application/json');
+
 require __DIR__ . '/../../../vendor/autoload.php';
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use ShortAPI\services\DatabaseException;
 use ShortAPI\SugarCurves\services\DataService;
-
-header("Access-Control-Allow-Origin: http://localhost:3000");
-header("Access-Control-Allow-Headers: Accept, Origin, Content-Type, Authorization");
-header("Access-Control-Allow-Credentials: true");
-header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -32,6 +32,17 @@ function exitWithError(string $message, Logger $log) : void {
     exit;
 }
 
+function exitWithPermissionError(Logger $log) : void {
+    http_response_code(403);
+    $message = 'Access Denied';
+    $log->error($message);
+    echo json_encode([
+        'error' => $message,
+        'status' => 'There was an error'
+    ]);
+    exit;
+}
+
 function exitWithStatus(string $message, Logger $log) : void {
     http_response_code(200);
     $log->debug($message);
@@ -39,6 +50,18 @@ function exitWithStatus(string $message, Logger $log) : void {
         'status' => $message
     ]);
     exit;
+}
+
+// Authorize
+$token = null;
+if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
+    if (preg_match('/^Bearer (.*)$/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
+        $token = $matches[1];
+    }
+}
+
+if (!$token) {
+    exitWithPermissionError($log);
 }
 
 // Check file size
