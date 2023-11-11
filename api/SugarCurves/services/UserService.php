@@ -23,6 +23,13 @@ SQL;
         WHERE id = :user_id
 SQL;
 
+    const DELETE_ACCESS_TOKEN_SQL = <<< SQL
+        UPDATE users
+        SET accessToken = ''
+        WHERE id = :user_id
+SQL;
+
+
     static ?self $instance = null;
     private Database $database;
     private Logger $log;
@@ -109,6 +116,49 @@ SQL;
         $params = [
             'user_id' => $userId,
             'access_token' => $accessToken
+        ];
+        try {
+            $statement->execute($params);
+        }
+        catch (Throwable $ex) {
+            $message = 'Database error updating user account.';
+            $this->log->error(self::SERVICE_NAME . ":$message", ['ex' => $ex->getMessage(), 'userId' => $userId]);
+            throw new DatabaseException($message);
+        }
+        if ($statement->rowCount() === 0) {
+            $message = 'Update to user did not modify any rows.';
+            $this->log->error(self::SERVICE_NAME . ":$message", ['userId' => $userId]);
+            throw new DatabaseException($message);
+        }
+    }
+
+
+    /**
+     * Remove access token for a give user
+     *
+     * @param int $userId
+     * @return void
+     * @throws DatabaseException
+     */
+    public function removeAccessToken(int $userId) : void {
+        // Validate arguments
+        if ($userId <= 0) {
+            $message = 'Invalid user id.';
+            $this->log->error(self::SERVICE_NAME . ":$message", ['userId' => $userId]);
+            throw new DatabaseException($message);
+        }
+
+        try {
+            $pdo = $this->database->getConnection('sugar_curves', Authorization::USER_ROLE);
+        }
+        catch (Throwable $ex) {
+            $this->log->error(self::SERVICE_NAME . ": Could not create database connection.", ['ex' => $ex->getMessage()]);
+            throw new DatabaseException('Could not create database connection.');
+        }
+
+        $statement = $pdo->prepare(self::DELETE_ACCESS_TOKEN_SQL);
+        $params = [
+            'user_id' => $userId
         ];
         try {
             $statement->execute($params);

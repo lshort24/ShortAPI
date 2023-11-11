@@ -1,24 +1,17 @@
 <?php
-//ini_set('display_errors', 1);
-//ini_set('display_startup_errors', 1);
-//error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 header("Access-Control-Allow-Origin: http://localhost:3000");
 header("Access-Control-Allow-Headers: Accept, Origin, Content-Type");
 header('Content-Type: application/json');
 
 require __DIR__ . '/../../../vendor/autoload.php';
-require_once __DIR__ . '/../../config/secrets.php';
-
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use ShortAPI\services\DatabaseException;
 use ShortAPI\SugarCurves\services\UserService;
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
 
 $log = new Logger('sugarCurvesAPI');
 $log->pushHandler(new StreamHandler(__DIR__ . '/../../../sugar_curves_api.log', Logger::DEBUG));
@@ -36,8 +29,6 @@ function exitWithStatus(bool $status, string $reason, Logger $log) {
 }
 
 $googleId = $_POST['googleId'];
-$userName = $_POST['userName'];
-$accessToken = $_POST['accessToken'];
 
 // Look up the user in the database by google id
 $user = [];
@@ -55,14 +46,12 @@ if (empty($user['googleId'])) {
     exitWithStatus(false, $message, $log);
 }
 
-// Update the access token for the user
+// Remove the access token for the user
 try {
-    UserService::instance()->updateAccessToken($user['id'], $accessToken);
+    UserService::instance()->removeAccessToken($user['id']);
 }
 catch (DatabaseException $ex) {
-    $message = "Could not update user's access token.";
+    $message = "Could not remove user's access token.";
     $log->error($message, ['userId' => $user['id'], 'googleId' => $googleId]);
     exitWithStatus(false, $message, $log);
 }
-
-exitWithStatus(true, '', $log);
