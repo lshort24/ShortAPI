@@ -22,32 +22,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $log = new Logger('sugarCurvesAPI');
 $log->pushHandler(new StreamHandler(__DIR__ . '/../../../sugar_curves_api.log', Logger::DEBUG));
 
-function exitWithError(string $message, Logger $log) : void {
-    http_response_code(200);
-    $log->error($message);
+function exitWithUploadDataResponse(int $code, bool $status, string $statusMessage) : void {
+    http_response_code($code);
     echo json_encode([
-        'error' => $message,
-        'status' => 'There was an error'
-    ]);
-    exit;
-}
-
-function exitWithPermissionError(Logger $log) : void {
-    http_response_code(403);
-    $message = 'Access Denied';
-    $log->error($message);
-    echo json_encode([
-        'error' => $message,
-        'status' => 'There was an error'
-    ]);
-    exit;
-}
-
-function exitWithStatus(string $message, Logger $log) : void {
-    http_response_code(200);
-    $log->debug($message);
-    echo json_encode([
-        'status' => $message
+        'status' => $status,
+        'statusMessage' => $statusMessage
     ]);
     exit;
 }
@@ -61,36 +40,28 @@ if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
 }
 
 if (!$token) {
-    exitWithPermissionError($log);
+    $log->error('No access token was specified.');
+    exitWithUploadDataResponse(403, false, 'Access denied.');
 }
 
 // Check file size
 if ($_FILES["file"]["size"] > 2 * 1000000) {
-    exitWithError("Sorry, your file is too large. Size = {$_FILES["file"]["size"]}.", $log);
+    $log->error("Your file is too large.", ['size' => $_FILES["file"]["size"]]);
+    exitWithUploadDataResponse(200, false, "Upload error");
 }
 
 // Check file type
 if ($_FILES['file']['type'] != 'text/csv') {
-    exitWithError("Sorry, only text/csv file types are allowed.", $log);
+    $log->error("Only text/csv file types are allowed.", ['type' => $_FILES['file']['type']]);
+    exitWithUploadDataResponse(200, false, "Upload error");
 }
 
-/**
-$startDate = $_POST['startDate'];
-$endDate = $_POST['endDate'];
-$log->debug("Deleting old data entries.", ['startDate' => $startDate, 'endDate' => $endDate]);
-try {
-    $numRows = DataService::instance()->clearData(24, $startDate, $endDate);
-    $log->debug("Deleted $numRows rows.");
-}
-catch (DatabaseException $ex) {
-    exitWithError($ex->getMessage(), $log);
-}
-*/
-
+// Upload data
 $minTimestampString = '2023-10-01';
 $minTimestamp = strtotime($minTimestampString);
 if (!$minTimestamp) {
-    exitWithError(htmlentities("Invalid minimum timestamp '$minTimestampString'."), $log);
+    $log->error("Invalid minimum timestamp", ['timestamp' => $minTimestampString]);
+    exitWithUploadDataResponse(200, false, "Upload error");
 }
 $lastTimestamp = '';
 try {
@@ -98,7 +69,8 @@ try {
     if ($lastTimestampString) {
         $lastTimestamp = strtotime($lastTimestampString);
         if (!$lastTimestamp) {
-            exitWithError(htmlentities("Invalid last timestamp '$minTimestampString'."), $log);
+            $log->error("Invalid last timestamp", ['timestamp' => $lastTimestampString]);
+            exitWithUploadDataResponse(200, false, "Upload error");
         }
     }
     else {
@@ -106,16 +78,19 @@ try {
     }
 }
 catch (Throwable $ex) {
-    exitWithError($ex->getMessage(), $log);
+    $log->error("Exception", ['ex' => $ex->getMessage()]);
+    exitWithUploadDataResponse(200, false, "Upload error");
 }
 if (!$lastTimestamp) {
-    exitWithError("Something went wrong determining the last timestamp.", $log);
+    $log->error("Something went wrong determining the last timestamp.");
+    exitWithUploadDataResponse(200, false, "Upload error");
 }
 $log->debug("Uploading file.", ['type' => $_FILES['file']['type']]);
 
 $dataFile = fopen($_FILES['file']['tmp_name'], "r");
 if (!$dataFile) {
-    exitWithError("Could not upload file {$_FILES['file']['name']}.", $log);
+    $log->error("Could not upload file", ['name' => $_FILES['file']['name']]);
+    exitWithUploadDataResponse(200, false, "Upload error");
 }
 $lineNo = 0;
 $data = [];
@@ -144,7 +119,8 @@ while (($line = fgets($dataFile)) !== false) {
     $timestampString = $fields[2];
     $timestamp = strtotime($timestampString);
     if (!$timestamp) {
-        exitWithError(htmlentities("Invalid timestamp '$timestampString'."), $log);
+        $log->error("Invalid timestamp", ['timestamp' => $timestampString]);
+        exitWithUploadDataResponse(200, false, "Upload error");
     }
     if ($timestamp <= $lastTimestamp) {
         continue;
@@ -161,12 +137,12 @@ while (($line = fgets($dataFile)) !== false) {
         $sqlTimestamp = $timestampDate->format('Y-m-d H:i:s');
     }
     catch (Throwable $ex) {
-        $message = "Could not create SQL timestamp";
-        $log->error($message, ['ex' => $ex->getMessage(), ['timestampString' => $timestampString]]);
-        exitWithError(htmlentities($message), $log);
+        $log->error("Could not create SQL timestamp", ['ex' => $ex->getMessage(), 'timestampString' => $timestampString]);
+        exitWithUploadDataResponse(200, false, "Upload error");
     }
     if (!$sqlTimestamp) {
-        exitWithError("Something went wrong creating the SQL timestamp.", $log);
+        $log->error("Something went wrong creating the SQL timestamp.");
+        exitWithUploadDataResponse(200, false, "Upload error");
     }
     $glucose = intval($fields[4]);
 
@@ -180,7 +156,7 @@ while (($line = fgets($dataFile)) !== false) {
 fclose($dataFile);
 
 if (count($data) === 0) {
-    exitWithStatus("There were no new records to upload.", $log);
+    exitWithUploadDataResponse(200, true, "There were no new records to upload.");
 }
 
 $rows = 0;
@@ -188,12 +164,12 @@ try {
     $rows = DataService::instance()->saveData($data);
 }
 catch (DatabaseException $ex) {
-    exitWithError($ex->getMessage(), $log);
+    $log->error("Could not save uploaded data to database.", ['ex' => $ex->getMessage()]);
+    exitWithUploadDataResponse(200, false, "Upload error");
 }
 catch (Throwable $ex) {
-    $message = "Could not save data.";
-    $log->error($message, ['ex' => $ex->getMessage()]);
-    exitWithError($message, $log);
+    $log->error("Could not save uploaded data.", ['ex' => $ex->getMessage()]);
+    exitWithUploadDataResponse(200, false, "Upload error");
 }
 
-exitWithStatus("Successfully uploaded $rows row(s).", $log);
+exitWithUploadDataResponse(200, true, "Successfully uploaded $rows row(s).");

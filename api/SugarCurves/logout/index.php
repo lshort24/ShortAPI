@@ -55,3 +55,5 @@ catch (DatabaseException $ex) {
     $log->error($message, ['userId' => $user['id'], 'googleId' => $googleId]);
     exitWithStatus(false, $message, $log);
 }
+
+exitWithStatus(true, '', $log);

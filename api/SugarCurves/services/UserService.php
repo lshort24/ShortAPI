@@ -19,13 +19,17 @@ SQL;
 
     const UPDATE_ACCESS_TOKEN_SQL = <<< SQL
         UPDATE users
-        SET accessToken = :access_token
+        SET 
+            accessToken = :access_token,
+            lastActivity = NOW()
         WHERE id = :user_id
 SQL;
 
     const DELETE_ACCESS_TOKEN_SQL = <<< SQL
         UPDATE users
-        SET accessToken = ''
+        SET 
+            accessToken = '',
+            lastActivity = NOW()
         WHERE id = :user_id
 SQL;
 
